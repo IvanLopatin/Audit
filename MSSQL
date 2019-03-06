@@ -1,0 +1,33 @@
+Настройка аудита SQL для отправки событий в системный журнал windows.
+	Настройка предусматривает передачe логов аудита в системный журнал windows.
+
+1)	Используя SQL Server Management Studio создать правило аудита:
+a.	В Object Explorer: Security->Audits, пкм New Audit
+ 
+b.	Вести имя (arcsight), Audit destination- Application log
+ 
+c.	Запустить аудит: пкм Enable Audit
+ 
+d.	Выполнить query для создания дополнительных правил аудита
+
+USE [master]
+GO
+
+CREATE SERVER AUDIT SPECIFICATION [arcsight]
+FOR SERVER AUDIT [arcsight]
+ADD (AUDIT_CHANGE_GROUP),
+ADD (FAILED_LOGIN_GROUP),
+ADD (SUCCESSFUL_LOGIN_GROUP),
+ADD (DATABASE_OBJECT_CHANGE_GROUP),
+ADD (DATABASE_PRINCIPAL_CHANGE_GROUP),
+ADD (SCHEMA_OBJECT_CHANGE_GROUP),
+ADD (SERVER_PRINCIPAL_CHANGE_GROUP),
+ADD (LOGIN_CHANGE_PASSWORD_GROUP),
+ADD (SERVER_STATE_CHANGE_GROUP)
+WITH (STATE = ON)
+GO
+
+После выполнения должно появиться и запустить правило в папке Server Audit Specification
+
+ 
+

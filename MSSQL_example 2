@@ -1,0 +1,732 @@
+
+Настройка параметров аудита MSSQL server
+
+Настройка прав доступа
+1.	Произвести добавление пользователя «sqlaudit» для сбора событий
+a.	Security -> Logins -> New Login 
+2.	Произвести назначение пароля для пользователя «sqlaudit»
+a.	General -> SQL Server authentication 
+(Пароль необходимо будет сообщить сотрудникам Диалог-Наука)
+3.	Произвести вход в БД под «master» 
+4.	Предоставить права доступа пользователю «sqlaudit»  – «Connect, Execute, Select»  
+5.	Произвести включение проксирование для пользователя «sqlaudit»
+a.	 SQL Server -> Properties -> Security ->enable proxy account
+6.	Произвести добавление возможности пользователю «sqlaudit» изменять трассы аудита
+a.	SQL Server -> Properties -> Alter trace
+
+Настройка доступа к журналам событий
+1.	Произвести вход на сервер с БД MS SQL
+2.	Произвести предоставление удаленного доступа к директории «sqltrace» путем:
+a.	Директория «sqltrace»- выбрать Properties -> Sharing -> Share this folder -> Share name = «sqltrace» -> Выбрать «Maximum allowed» -Apply
+ 
+b.	Перейти в Permissions и произвести добавление доменного пользователя для сбора событий ИБ для ArcSight . Предоставить «Full Controll»
+
+ 
+c.	Перейти в раздел Security и для доменного пользователя ArcSight предоставить права «Full Controll»
+ 
+
+
+Включение параметров аудита
+
+1.	Произвести выполнение sql-файла «sqlserver_2008_audit_config_sample.sql» прилагаемого к данному стандарту и указанному ниже 
+2.	Произвести запуск процеуры
+a.	EXEC AuditTrcProc
+3.	Выполнить команды и произвести рестарт БД 
+a.	USE master 
+b.	EXEC sp_procoption 'AuditTrcProc', 'startup', 'TRUE';
+4.	Проверить, что настройки произведены правильно
+a.	SELECT * FROM :: fn_trace_getinfo(default)
+
+Предоставить всю необходимую информацию по логинам и паролям сотрудникам Диалог-Наука
+
+
+
+
+
+
+
+sqlserver_2008_audit_config_sample.sql
+CREATE PROC AuditTrcProc AS
+-- Create a Queue
+declare @rc int
+declare @TraceID int
+declare @maxfilesize bigint
+set @maxfilesize = 1
+
+-- Please replace the file name with an appropriate file name prefixed by a path, e.g., C:\sqltrace\sessionTrace.
+-- The .trc extension will be appended to the filename automatically.
+-- If you are writing from remote server to local drive, use UNC path and make sure server has write access to your network share
+
+
+declare @cmd sysname
+
+set @cmd = 'copy c:\sqltrace\sessiontrace.trc c:\sqltrace\sessiontrace' + cast(cast(rand() * 1000000 as int) as varchar)
+print @cmd
+exec master..xp_cmdshell @cmd
+
+set @cmd= 'del c:\sqltrace\sessiontrace.trc
+print @cmd
+exec master..xp_cmdshell @cmd
+
+exec @rc = sp_trace_create @TraceID output, 2, N'c:\sqltrace\sessiontrace', @maxfilesize, null
+if (@rc != 0) goto error
+
+-- Client side File and Table cannot be scripted
+
+-- Set the events and columns
+declare @on bit
+set @on = 1
+
+exec sp_trace_setevent @TraceID, 10, 1, @on
+exec sp_trace_setevent @TraceID, 10, 3, @on
+exec sp_trace_setevent @TraceID, 10, 6, @on
+exec sp_trace_setevent @TraceID, 10, 7, @on
+exec sp_trace_setevent @TraceID, 10, 8, @on
+exec sp_trace_setevent @TraceID, 10, 9, @on
+exec sp_trace_setevent @TraceID, 10, 10, @on
+exec sp_trace_setevent @TraceID, 10, 11, @on
+exec sp_trace_setevent @TraceID, 10, 12, @on
+exec sp_trace_setevent @TraceID, 10, 13, @on
+exec sp_trace_setevent @TraceID, 10, 14, @on
+exec sp_trace_setevent @TraceID, 10, 15, @on
+exec sp_trace_setevent @TraceID, 10, 16, @on
+exec sp_trace_setevent @TraceID, 10, 17, @on
+exec sp_trace_setevent @TraceID, 10, 18, @on
+exec sp_trace_setevent @TraceID, 10, 21, @on
+exec sp_trace_setevent @TraceID, 10, 23, @on
+exec sp_trace_setevent @TraceID, 10, 26, @on
+exec sp_trace_setevent @TraceID, 10, 27, @on
+exec sp_trace_setevent @TraceID, 10, 34, @on
+exec sp_trace_setevent @TraceID, 10, 35, @on
+exec sp_trace_setevent @TraceID, 10, 36, @on
+exec sp_trace_setevent @TraceID, 10, 37, @on
+exec sp_trace_setevent @TraceID, 10, 38, @on
+exec sp_trace_setevent @TraceID, 10, 39, @on
+exec sp_trace_setevent @TraceID, 10, 41, @on
+exec sp_trace_setevent @TraceID, 10, 42, @on
+exec sp_trace_setevent @TraceID, 10, 43, @on
+exec sp_trace_setevent @TraceID, 10, 64, @on
+
+exec sp_trace_setevent @TraceID, 12, 1, @on
+exec sp_trace_setevent @TraceID, 12, 3, @on
+exec sp_trace_setevent @TraceID, 12, 6, @on
+exec sp_trace_setevent @TraceID, 12, 7, @on
+exec sp_trace_setevent @TraceID, 12, 8, @on
+exec sp_trace_setevent @TraceID, 12, 9, @on
+exec sp_trace_setevent @TraceID, 12, 10, @on
+exec sp_trace_setevent @TraceID, 12, 11, @on
+exec sp_trace_setevent @TraceID, 12, 12, @on
+exec sp_trace_setevent @TraceID, 12, 13, @on
+exec sp_trace_setevent @TraceID, 12, 14, @on
+exec sp_trace_setevent @TraceID, 12, 15, @on
+exec sp_trace_setevent @TraceID, 12, 16, @on
+exec sp_trace_setevent @TraceID, 12, 17, @on
+exec sp_trace_setevent @TraceID, 12, 18, @on
+exec sp_trace_setevent @TraceID, 12, 21, @on
+exec sp_trace_setevent @TraceID, 12, 23, @on
+exec sp_trace_setevent @TraceID, 12, 26, @on
+exec sp_trace_setevent @TraceID, 12, 27, @on
+exec sp_trace_setevent @TraceID, 12, 34, @on
+exec sp_trace_setevent @TraceID, 12, 35, @on
+exec sp_trace_setevent @TraceID, 12, 36, @on
+exec sp_trace_setevent @TraceID, 12, 37, @on
+exec sp_trace_setevent @TraceID, 12, 38, @on
+exec sp_trace_setevent @TraceID, 12, 39, @on
+exec sp_trace_setevent @TraceID, 12, 41, @on
+exec sp_trace_setevent @TraceID, 12, 42, @on
+exec sp_trace_setevent @TraceID, 12, 43, @on
+exec sp_trace_setevent @TraceID, 12, 64, @on
+
+exec sp_trace_setevent @TraceID, 14, 1, @on
+exec sp_trace_setevent @TraceID, 14, 3, @on
+exec sp_trace_setevent @TraceID, 14, 6, @on
+exec sp_trace_setevent @TraceID, 14, 7, @on
+exec sp_trace_setevent @TraceID, 14, 8, @on
+exec sp_trace_setevent @TraceID, 14, 9, @on
+exec sp_trace_setevent @TraceID, 14, 10, @on
+exec sp_trace_setevent @TraceID, 14, 11, @on
+exec sp_trace_setevent @TraceID, 14, 12, @on
+exec sp_trace_setevent @TraceID, 14, 13, @on
+exec sp_trace_setevent @TraceID, 14, 14, @on
+exec sp_trace_setevent @TraceID, 14, 15, @on
+exec sp_trace_setevent @TraceID, 14, 16, @on
+exec sp_trace_setevent @TraceID, 14, 17, @on
+exec sp_trace_setevent @TraceID, 14, 18, @on
+exec sp_trace_setevent @TraceID, 14, 21, @on
+exec sp_trace_setevent @TraceID, 14, 23, @on
+exec sp_trace_setevent @TraceID, 14, 26, @on
+exec sp_trace_setevent @TraceID, 14, 27, @on
+exec sp_trace_setevent @TraceID, 14, 34, @on
+exec sp_trace_setevent @TraceID, 14, 35, @on
+exec sp_trace_setevent @TraceID, 14, 36, @on
+exec sp_trace_setevent @TraceID, 14, 37, @on
+exec sp_trace_setevent @TraceID, 14, 38, @on
+exec sp_trace_setevent @TraceID, 14, 39, @on
+exec sp_trace_setevent @TraceID, 14, 41, @on
+exec sp_trace_setevent @TraceID, 14, 42, @on
+exec sp_trace_setevent @TraceID, 14, 43, @on
+exec sp_trace_setevent @TraceID, 14, 64, @on
+
+exec sp_trace_setevent @TraceID, 15, 1, @on
+exec sp_trace_setevent @TraceID, 15, 3, @on
+exec sp_trace_setevent @TraceID, 15, 6, @on
+exec sp_trace_setevent @TraceID, 15, 7, @on
+exec sp_trace_setevent @TraceID, 15, 8, @on
+exec sp_trace_setevent @TraceID, 15, 9, @on
+exec sp_trace_setevent @TraceID, 15, 10, @on
+exec sp_trace_setevent @TraceID, 15, 11, @on
+exec sp_trace_setevent @TraceID, 15, 12, @on
+exec sp_trace_setevent @TraceID, 15, 13, @on
+exec sp_trace_setevent @TraceID, 15, 14, @on
+exec sp_trace_setevent @TraceID, 15, 15, @on
+exec sp_trace_setevent @TraceID, 15, 16, @on
+exec sp_trace_setevent @TraceID, 15, 17, @on
+exec sp_trace_setevent @TraceID, 15, 18, @on
+exec sp_trace_setevent @TraceID, 15, 21, @on
+exec sp_trace_setevent @TraceID, 15, 23, @on
+exec sp_trace_setevent @TraceID, 15, 26, @on
+exec sp_trace_setevent @TraceID, 15, 27, @on
+exec sp_trace_setevent @TraceID, 15, 34, @on
+exec sp_trace_setevent @TraceID, 15, 35, @on
+exec sp_trace_setevent @TraceID, 15, 36, @on
+exec sp_trace_setevent @TraceID, 15, 37, @on
+exec sp_trace_setevent @TraceID, 15, 38, @on
+exec sp_trace_setevent @TraceID, 15, 39, @on
+exec sp_trace_setevent @TraceID, 15, 41, @on
+exec sp_trace_setevent @TraceID, 15, 42, @on
+exec sp_trace_setevent @TraceID, 15, 43, @on
+exec sp_trace_setevent @TraceID, 15, 64, @on
+
+exec sp_trace_setevent @TraceID, 17, 1, @on
+exec sp_trace_setevent @TraceID, 17, 3, @on
+exec sp_trace_setevent @TraceID, 17, 6, @on
+exec sp_trace_setevent @TraceID, 17, 7, @on
+exec sp_trace_setevent @TraceID, 17, 8, @on
+exec sp_trace_setevent @TraceID, 17, 9, @on
+exec sp_trace_setevent @TraceID, 17, 10, @on
+exec sp_trace_setevent @TraceID, 17, 11, @on
+exec sp_trace_setevent @TraceID, 17, 12, @on
+exec sp_trace_setevent @TraceID, 17, 13, @on
+exec sp_trace_setevent @TraceID, 17, 14, @on
+exec sp_trace_setevent @TraceID, 17, 15, @on
+exec sp_trace_setevent @TraceID, 17, 16, @on
+exec sp_trace_setevent @TraceID, 17, 17, @on
+exec sp_trace_setevent @TraceID, 17, 18, @on
+exec sp_trace_setevent @TraceID, 17, 21, @on
+exec sp_trace_setevent @TraceID, 17, 23, @on
+exec sp_trace_setevent @TraceID, 17, 26, @on
+exec sp_trace_setevent @TraceID, 17, 27, @on
+exec sp_trace_setevent @TraceID, 17, 34, @on
+exec sp_trace_setevent @TraceID, 17, 35, @on
+exec sp_trace_setevent @TraceID, 17, 36, @on
+exec sp_trace_setevent @TraceID, 17, 37, @on
+exec sp_trace_setevent @TraceID, 17, 38, @on
+exec sp_trace_setevent @TraceID, 17, 39, @on
+exec sp_trace_setevent @TraceID, 17, 41, @on
+exec sp_trace_setevent @TraceID, 17, 42, @on
+exec sp_trace_setevent @TraceID, 17, 43, @on
+exec sp_trace_setevent @TraceID, 17, 64, @on
+
+exec sp_trace_setevent @TraceID, 104, 1, @on
+exec sp_trace_setevent @TraceID, 104, 3, @on
+exec sp_trace_setevent @TraceID, 104, 6, @on
+exec sp_trace_setevent @TraceID, 104, 7, @on
+exec sp_trace_setevent @TraceID, 104, 8, @on
+exec sp_trace_setevent @TraceID, 104, 9, @on
+exec sp_trace_setevent @TraceID, 104, 10, @on
+exec sp_trace_setevent @TraceID, 104, 11, @on
+exec sp_trace_setevent @TraceID, 104, 12, @on
+exec sp_trace_setevent @TraceID, 104, 13, @on
+exec sp_trace_setevent @TraceID, 104, 14, @on
+exec sp_trace_setevent @TraceID, 104, 15, @on
+exec sp_trace_setevent @TraceID, 104, 16, @on
+exec sp_trace_setevent @TraceID, 104, 17, @on
+exec sp_trace_setevent @TraceID, 104, 18, @on
+exec sp_trace_setevent @TraceID, 104, 21, @on
+exec sp_trace_setevent @TraceID, 104, 23, @on
+exec sp_trace_setevent @TraceID, 104, 26, @on
+exec sp_trace_setevent @TraceID, 104, 27, @on
+exec sp_trace_setevent @TraceID, 104, 34, @on
+exec sp_trace_setevent @TraceID, 104, 35, @on
+exec sp_trace_setevent @TraceID, 104, 36, @on
+exec sp_trace_setevent @TraceID, 104, 37, @on
+exec sp_trace_setevent @TraceID, 104, 38, @on
+exec sp_trace_setevent @TraceID, 104, 39, @on
+exec sp_trace_setevent @TraceID, 104, 41, @on
+exec sp_trace_setevent @TraceID, 104, 42, @on
+exec sp_trace_setevent @TraceID, 104, 43, @on
+exec sp_trace_setevent @TraceID, 104, 64, @on
+
+exec sp_trace_setevent @TraceID, 105, 1, @on
+exec sp_trace_setevent @TraceID, 105, 3, @on
+exec sp_trace_setevent @TraceID, 105, 6, @on
+exec sp_trace_setevent @TraceID, 105, 7, @on
+exec sp_trace_setevent @TraceID, 105, 8, @on
+exec sp_trace_setevent @TraceID, 105, 9, @on
+exec sp_trace_setevent @TraceID, 105, 10, @on
+exec sp_trace_setevent @TraceID, 105, 11, @on
+exec sp_trace_setevent @TraceID, 105, 12, @on
+exec sp_trace_setevent @TraceID, 105, 13, @on
+exec sp_trace_setevent @TraceID, 105, 14, @on
+exec sp_trace_setevent @TraceID, 105, 15, @on
+exec sp_trace_setevent @TraceID, 105, 16, @on
+exec sp_trace_setevent @TraceID, 105, 17, @on
+exec sp_trace_setevent @TraceID, 105, 18, @on
+exec sp_trace_setevent @TraceID, 105, 21, @on
+exec sp_trace_setevent @TraceID, 105, 23, @on
+exec sp_trace_setevent @TraceID, 105, 26, @on
+exec sp_trace_setevent @TraceID, 105, 27, @on
+exec sp_trace_setevent @TraceID, 105, 34, @on
+exec sp_trace_setevent @TraceID, 105, 35, @on
+exec sp_trace_setevent @TraceID, 105, 36, @on
+exec sp_trace_setevent @TraceID, 105, 37, @on
+exec sp_trace_setevent @TraceID, 105, 38, @on
+exec sp_trace_setevent @TraceID, 105, 39, @on
+exec sp_trace_setevent @TraceID, 105, 41, @on
+exec sp_trace_setevent @TraceID, 105, 42, @on
+exec sp_trace_setevent @TraceID, 105, 43, @on
+exec sp_trace_setevent @TraceID, 105, 64, @on
+
+exec sp_trace_setevent @TraceID, 106, 1, @on
+exec sp_trace_setevent @TraceID, 106, 3, @on
+exec sp_trace_setevent @TraceID, 106, 6, @on
+exec sp_trace_setevent @TraceID, 106, 7, @on
+exec sp_trace_setevent @TraceID, 106, 8, @on
+exec sp_trace_setevent @TraceID, 106, 9, @on
+exec sp_trace_setevent @TraceID, 106, 10, @on
+exec sp_trace_setevent @TraceID, 106, 11, @on
+exec sp_trace_setevent @TraceID, 106, 12, @on
+exec sp_trace_setevent @TraceID, 106, 13, @on
+exec sp_trace_setevent @TraceID, 106, 14, @on
+exec sp_trace_setevent @TraceID, 106, 15, @on
+exec sp_trace_setevent @TraceID, 106, 16, @on
+exec sp_trace_setevent @TraceID, 106, 17, @on
+exec sp_trace_setevent @TraceID, 106, 18, @on
+exec sp_trace_setevent @TraceID, 106, 21, @on
+exec sp_trace_setevent @TraceID, 106, 23, @on
+exec sp_trace_setevent @TraceID, 106, 26, @on
+exec sp_trace_setevent @TraceID, 106, 27, @on
+exec sp_trace_setevent @TraceID, 106, 34, @on
+exec sp_trace_setevent @TraceID, 106, 35, @on
+exec sp_trace_setevent @TraceID, 106, 36, @on
+exec sp_trace_setevent @TraceID, 106, 37, @on
+exec sp_trace_setevent @TraceID, 106, 38, @on
+exec sp_trace_setevent @TraceID, 106, 39, @on
+exec sp_trace_setevent @TraceID, 106, 41, @on
+exec sp_trace_setevent @TraceID, 106, 42, @on
+exec sp_trace_setevent @TraceID, 106, 43, @on
+exec sp_trace_setevent @TraceID, 106, 64, @on
+
+exec sp_trace_setevent @TraceID, 107, 1, @on
+exec sp_trace_setevent @TraceID, 107, 3, @on
+exec sp_trace_setevent @TraceID, 107, 6, @on
+exec sp_trace_setevent @TraceID, 107, 7, @on
+exec sp_trace_setevent @TraceID, 107, 8, @on
+exec sp_trace_setevent @TraceID, 107, 9, @on
+exec sp_trace_setevent @TraceID, 107, 10, @on
+exec sp_trace_setevent @TraceID, 107, 11, @on
+exec sp_trace_setevent @TraceID, 107, 12, @on
+exec sp_trace_setevent @TraceID, 107, 13, @on
+exec sp_trace_setevent @TraceID, 107, 14, @on
+exec sp_trace_setevent @TraceID, 107, 15, @on
+exec sp_trace_setevent @TraceID, 107, 16, @on
+exec sp_trace_setevent @TraceID, 107, 17, @on
+exec sp_trace_setevent @TraceID, 107, 18, @on
+exec sp_trace_setevent @TraceID, 107, 21, @on
+exec sp_trace_setevent @TraceID, 107, 23, @on
+exec sp_trace_setevent @TraceID, 107, 26, @on
+exec sp_trace_setevent @TraceID, 107, 27, @on
+exec sp_trace_setevent @TraceID, 107, 34, @on
+exec sp_trace_setevent @TraceID, 107, 35, @on
+exec sp_trace_setevent @TraceID, 107, 36, @on
+exec sp_trace_setevent @TraceID, 107, 37, @on
+exec sp_trace_setevent @TraceID, 107, 38, @on
+exec sp_trace_setevent @TraceID, 107, 39, @on
+exec sp_trace_setevent @TraceID, 107, 41, @on
+exec sp_trace_setevent @TraceID, 107, 42, @on
+exec sp_trace_setevent @TraceID, 107, 43, @on
+exec sp_trace_setevent @TraceID, 107, 64, @on
+
+exec sp_trace_setevent @TraceID, 108, 1, @on
+exec sp_trace_setevent @TraceID, 108, 3, @on
+exec sp_trace_setevent @TraceID, 108, 6, @on
+exec sp_trace_setevent @TraceID, 108, 7, @on
+exec sp_trace_setevent @TraceID, 108, 8, @on
+exec sp_trace_setevent @TraceID, 108, 9, @on
+exec sp_trace_setevent @TraceID, 108, 10, @on
+exec sp_trace_setevent @TraceID, 108, 11, @on
+exec sp_trace_setevent @TraceID, 108, 12, @on
+exec sp_trace_setevent @TraceID, 108, 13, @on
+exec sp_trace_setevent @TraceID, 108, 14, @on
+exec sp_trace_setevent @TraceID, 108, 15, @on
+exec sp_trace_setevent @TraceID, 108, 16, @on
+exec sp_trace_setevent @TraceID, 108, 17, @on
+exec sp_trace_setevent @TraceID, 108, 18, @on
+exec sp_trace_setevent @TraceID, 108, 21, @on
+exec sp_trace_setevent @TraceID, 108, 23, @on
+exec sp_trace_setevent @TraceID, 108, 26, @on
+exec sp_trace_setevent @TraceID, 108, 27, @on
+exec sp_trace_setevent @TraceID, 108, 34, @on
+exec sp_trace_setevent @TraceID, 108, 35, @on
+exec sp_trace_setevent @TraceID, 108, 36, @on
+exec sp_trace_setevent @TraceID, 108, 37, @on
+exec sp_trace_setevent @TraceID, 108, 38, @on
+exec sp_trace_setevent @TraceID, 108, 39, @on
+exec sp_trace_setevent @TraceID, 108, 41, @on
+exec sp_trace_setevent @TraceID, 108, 42, @on
+exec sp_trace_setevent @TraceID, 108, 43, @on
+exec sp_trace_setevent @TraceID, 108, 64, @on
+
+exec sp_trace_setevent @TraceID, 109, 1, @on
+exec sp_trace_setevent @TraceID, 109, 3, @on
+exec sp_trace_setevent @TraceID, 109, 6, @on
+exec sp_trace_setevent @TraceID, 109, 7, @on
+exec sp_trace_setevent @TraceID, 109, 8, @on
+exec sp_trace_setevent @TraceID, 109, 9, @on
+exec sp_trace_setevent @TraceID, 109, 10, @on
+exec sp_trace_setevent @TraceID, 109, 11, @on
+exec sp_trace_setevent @TraceID, 109, 12, @on
+exec sp_trace_setevent @TraceID, 109, 13, @on
+exec sp_trace_setevent @TraceID, 109, 14, @on
+exec sp_trace_setevent @TraceID, 109, 15, @on
+exec sp_trace_setevent @TraceID, 109, 16, @on
+exec sp_trace_setevent @TraceID, 109, 17, @on
+exec sp_trace_setevent @TraceID, 109, 18, @on
+exec sp_trace_setevent @TraceID, 109, 21, @on
+exec sp_trace_setevent @TraceID, 109, 23, @on
+exec sp_trace_setevent @TraceID, 109, 26, @on
+exec sp_trace_setevent @TraceID, 109, 27, @on
+exec sp_trace_setevent @TraceID, 109, 34, @on
+exec sp_trace_setevent @TraceID, 109, 35, @on
+exec sp_trace_setevent @TraceID, 109, 36, @on
+exec sp_trace_setevent @TraceID, 109, 37, @on
+exec sp_trace_setevent @TraceID, 109, 38, @on
+exec sp_trace_setevent @TraceID, 109, 39, @on
+exec sp_trace_setevent @TraceID, 109, 41, @on
+exec sp_trace_setevent @TraceID, 109, 42, @on
+exec sp_trace_setevent @TraceID, 109, 43, @on
+exec sp_trace_setevent @TraceID, 109, 64, @on
+
+exec sp_trace_setevent @TraceID, 110, 1, @on
+exec sp_trace_setevent @TraceID, 110, 3, @on
+exec sp_trace_setevent @TraceID, 110, 6, @on
+exec sp_trace_setevent @TraceID, 110, 7, @on
+exec sp_trace_setevent @TraceID, 110, 8, @on
+exec sp_trace_setevent @TraceID, 110, 9, @on
+exec sp_trace_setevent @TraceID, 110, 10, @on
+exec sp_trace_setevent @TraceID, 110, 11, @on
+exec sp_trace_setevent @TraceID, 110, 12, @on
+exec sp_trace_setevent @TraceID, 110, 13, @on
+exec sp_trace_setevent @TraceID, 110, 14, @on
+exec sp_trace_setevent @TraceID, 110, 15, @on
+exec sp_trace_setevent @TraceID, 110, 16, @on
+exec sp_trace_setevent @TraceID, 110, 17, @on
+exec sp_trace_setevent @TraceID, 110, 18, @on
+exec sp_trace_setevent @TraceID, 110, 21, @on
+exec sp_trace_setevent @TraceID, 110, 23, @on
+exec sp_trace_setevent @TraceID, 110, 26, @on
+exec sp_trace_setevent @TraceID, 110, 27, @on
+exec sp_trace_setevent @TraceID, 110, 34, @on
+exec sp_trace_setevent @TraceID, 110, 35, @on
+exec sp_trace_setevent @TraceID, 110, 36, @on
+exec sp_trace_setevent @TraceID, 110, 37, @on
+exec sp_trace_setevent @TraceID, 110, 38, @on
+exec sp_trace_setevent @TraceID, 110, 39, @on
+exec sp_trace_setevent @TraceID, 110, 41, @on
+exec sp_trace_setevent @TraceID, 110, 42, @on
+exec sp_trace_setevent @TraceID, 110, 43, @on
+exec sp_trace_setevent @TraceID, 110, 64, @on
+
+exec sp_trace_setevent @TraceID, 111, 1, @on
+exec sp_trace_setevent @TraceID, 111, 3, @on
+exec sp_trace_setevent @TraceID, 111, 6, @on
+exec sp_trace_setevent @TraceID, 111, 7, @on
+exec sp_trace_setevent @TraceID, 111, 8, @on
+exec sp_trace_setevent @TraceID, 111, 9, @on
+exec sp_trace_setevent @TraceID, 111, 10, @on
+exec sp_trace_setevent @TraceID, 111, 11, @on
+exec sp_trace_setevent @TraceID, 111, 12, @on
+exec sp_trace_setevent @TraceID, 111, 13, @on
+exec sp_trace_setevent @TraceID, 111, 14, @on
+exec sp_trace_setevent @TraceID, 111, 15, @on
+exec sp_trace_setevent @TraceID, 111, 16, @on
+exec sp_trace_setevent @TraceID, 111, 17, @on
+exec sp_trace_setevent @TraceID, 111, 18, @on
+exec sp_trace_setevent @TraceID, 111, 21, @on
+exec sp_trace_setevent @TraceID, 111, 23, @on
+exec sp_trace_setevent @TraceID, 111, 26, @on
+exec sp_trace_setevent @TraceID, 111, 27, @on
+exec sp_trace_setevent @TraceID, 111, 34, @on
+exec sp_trace_setevent @TraceID, 111, 35, @on
+exec sp_trace_setevent @TraceID, 111, 36, @on
+exec sp_trace_setevent @TraceID, 111, 37, @on
+exec sp_trace_setevent @TraceID, 111, 38, @on
+exec sp_trace_setevent @TraceID, 111, 39, @on
+exec sp_trace_setevent @TraceID, 111, 41, @on
+exec sp_trace_setevent @TraceID, 111, 42, @on
+exec sp_trace_setevent @TraceID, 111, 43, @on
+exec sp_trace_setevent @TraceID, 111, 64, @on
+
+exec sp_trace_setevent @TraceID, 212, 1, @on
+exec sp_trace_setevent @TraceID, 212, 3, @on
+exec sp_trace_setevent @TraceID, 212, 6, @on
+exec sp_trace_setevent @TraceID, 212, 7, @on
+exec sp_trace_setevent @TraceID, 212, 8, @on
+exec sp_trace_setevent @TraceID, 212, 9, @on
+exec sp_trace_setevent @TraceID, 212, 10, @on
+exec sp_trace_setevent @TraceID, 212, 11, @on
+exec sp_trace_setevent @TraceID, 212, 12, @on
+exec sp_trace_setevent @TraceID, 212, 13, @on
+exec sp_trace_setevent @TraceID, 212, 14, @on
+exec sp_trace_setevent @TraceID, 212, 15, @on
+exec sp_trace_setevent @TraceID, 212, 16, @on
+exec sp_trace_setevent @TraceID, 212, 17, @on
+exec sp_trace_setevent @TraceID, 212, 18, @on
+exec sp_trace_setevent @TraceID, 212, 21, @on
+exec sp_trace_setevent @TraceID, 212, 23, @on
+exec sp_trace_setevent @TraceID, 212, 26, @on
+exec sp_trace_setevent @TraceID, 212, 27, @on
+exec sp_trace_setevent @TraceID, 212, 34, @on
+exec sp_trace_setevent @TraceID, 212, 35, @on
+exec sp_trace_setevent @TraceID, 212, 36, @on
+exec sp_trace_setevent @TraceID, 212, 37, @on
+exec sp_trace_setevent @TraceID, 212, 38, @on
+exec sp_trace_setevent @TraceID, 212, 39, @on
+exec sp_trace_setevent @TraceID, 212, 41, @on
+exec sp_trace_setevent @TraceID, 212, 42, @on
+exec sp_trace_setevent @TraceID, 212, 43, @on
+exec sp_trace_setevent @TraceID, 212, 64, @on
+
+exec sp_trace_setevent @TraceID, 213, 1, @on
+exec sp_trace_setevent @TraceID, 213, 3, @on
+exec sp_trace_setevent @TraceID, 213, 6, @on
+exec sp_trace_setevent @TraceID, 213, 7, @on
+exec sp_trace_setevent @TraceID, 213, 8, @on
+exec sp_trace_setevent @TraceID, 213, 9, @on
+exec sp_trace_setevent @TraceID, 213, 10, @on
+exec sp_trace_setevent @TraceID, 213, 11, @on
+exec sp_trace_setevent @TraceID, 213, 12, @on
+exec sp_trace_setevent @TraceID, 213, 13, @on
+exec sp_trace_setevent @TraceID, 213, 14, @on
+exec sp_trace_setevent @TraceID, 213, 15, @on
+exec sp_trace_setevent @TraceID, 213, 16, @on
+exec sp_trace_setevent @TraceID, 213, 17, @on
+exec sp_trace_setevent @TraceID, 213, 18, @on
+exec sp_trace_setevent @TraceID, 213, 21, @on
+exec sp_trace_setevent @TraceID, 213, 23, @on
+exec sp_trace_setevent @TraceID, 213, 26, @on
+exec sp_trace_setevent @TraceID, 213, 27, @on
+exec sp_trace_setevent @TraceID, 213, 34, @on
+exec sp_trace_setevent @TraceID, 213, 35, @on
+exec sp_trace_setevent @TraceID, 213, 36, @on
+exec sp_trace_setevent @TraceID, 213, 37, @on
+exec sp_trace_setevent @TraceID, 213, 38, @on
+exec sp_trace_setevent @TraceID, 213, 39, @on
+exec sp_trace_setevent @TraceID, 213, 41, @on
+exec sp_trace_setevent @TraceID, 213, 42, @on
+exec sp_trace_setevent @TraceID, 213, 43, @on
+exec sp_trace_setevent @TraceID, 213, 64, @on
+
+exec sp_trace_setevent @TraceID, 214, 1, @on
+exec sp_trace_setevent @TraceID, 214, 3, @on
+exec sp_trace_setevent @TraceID, 214, 6, @on
+exec sp_trace_setevent @TraceID, 214, 7, @on
+exec sp_trace_setevent @TraceID, 214, 8, @on
+exec sp_trace_setevent @TraceID, 214, 9, @on
+exec sp_trace_setevent @TraceID, 214, 10, @on
+exec sp_trace_setevent @TraceID, 214, 11, @on
+exec sp_trace_setevent @TraceID, 214, 12, @on
+exec sp_trace_setevent @TraceID, 214, 13, @on
+exec sp_trace_setevent @TraceID, 214, 14, @on
+exec sp_trace_setevent @TraceID, 214, 15, @on
+exec sp_trace_setevent @TraceID, 214, 16, @on
+exec sp_trace_setevent @TraceID, 214, 17, @on
+exec sp_trace_setevent @TraceID, 214, 18, @on
+exec sp_trace_setevent @TraceID, 214, 21, @on
+exec sp_trace_setevent @TraceID, 214, 23, @on
+exec sp_trace_setevent @TraceID, 214, 26, @on
+exec sp_trace_setevent @TraceID, 214, 27, @on
+exec sp_trace_setevent @TraceID, 214, 34, @on
+exec sp_trace_setevent @TraceID, 214, 35, @on
+exec sp_trace_setevent @TraceID, 214, 36, @on
+exec sp_trace_setevent @TraceID, 214, 37, @on
+exec sp_trace_setevent @TraceID, 214, 38, @on
+exec sp_trace_setevent @TraceID, 214, 39, @on
+exec sp_trace_setevent @TraceID, 214, 41, @on
+exec sp_trace_setevent @TraceID, 214, 42, @on
+exec sp_trace_setevent @TraceID, 214, 43, @on
+exec sp_trace_setevent @TraceID, 214, 64, @on
+
+exec sp_trace_setevent @TraceID, 215, 1, @on
+exec sp_trace_setevent @TraceID, 215, 3, @on
+exec sp_trace_setevent @TraceID, 215, 6, @on
+exec sp_trace_setevent @TraceID, 215, 7, @on
+exec sp_trace_setevent @TraceID, 215, 8, @on
+exec sp_trace_setevent @TraceID, 215, 9, @on
+exec sp_trace_setevent @TraceID, 215, 10, @on
+exec sp_trace_setevent @TraceID, 215, 11, @on
+exec sp_trace_setevent @TraceID, 215, 12, @on
+exec sp_trace_setevent @TraceID, 215, 13, @on
+exec sp_trace_setevent @TraceID, 215, 14, @on
+exec sp_trace_setevent @TraceID, 215, 15, @on
+exec sp_trace_setevent @TraceID, 215, 16, @on
+exec sp_trace_setevent @TraceID, 215, 17, @on
+exec sp_trace_setevent @TraceID, 215, 18, @on
+exec sp_trace_setevent @TraceID, 215, 21, @on
+exec sp_trace_setevent @TraceID, 215, 23, @on
+exec sp_trace_setevent @TraceID, 215, 26, @on
+exec sp_trace_setevent @TraceID, 215, 27, @on
+exec sp_trace_setevent @TraceID, 215, 34, @on
+exec sp_trace_setevent @TraceID, 215, 35, @on
+exec sp_trace_setevent @TraceID, 215, 36, @on
+exec sp_trace_setevent @TraceID, 215, 37, @on
+exec sp_trace_setevent @TraceID, 215, 38, @on
+exec sp_trace_setevent @TraceID, 215, 39, @on
+exec sp_trace_setevent @TraceID, 215, 41, @on
+exec sp_trace_setevent @TraceID, 215, 42, @on
+exec sp_trace_setevent @TraceID, 215, 43, @on
+exec sp_trace_setevent @TraceID, 215, 64, @on
+
+exec sp_trace_setevent @TraceID, 216, 1, @on
+exec sp_trace_setevent @TraceID, 216, 3, @on
+exec sp_trace_setevent @TraceID, 216, 6, @on
+exec sp_trace_setevent @TraceID, 216, 7, @on
+exec sp_trace_setevent @TraceID, 216, 8, @on
+exec sp_trace_setevent @TraceID, 216, 9, @on
+exec sp_trace_setevent @TraceID, 216, 10, @on
+exec sp_trace_setevent @TraceID, 216, 11, @on
+exec sp_trace_setevent @TraceID, 216, 12, @on
+exec sp_trace_setevent @TraceID, 216, 13, @on
+exec sp_trace_setevent @TraceID, 216, 14, @on
+exec sp_trace_setevent @TraceID, 216, 15, @on
+exec sp_trace_setevent @TraceID, 216, 16, @on
+exec sp_trace_setevent @TraceID, 216, 17, @on
+exec sp_trace_setevent @TraceID, 216, 18, @on
+exec sp_trace_setevent @TraceID, 216, 21, @on
+exec sp_trace_setevent @TraceID, 216, 23, @on
+exec sp_trace_setevent @TraceID, 216, 26, @on
+exec sp_trace_setevent @TraceID, 216, 27, @on
+exec sp_trace_setevent @TraceID, 216, 34, @on
+exec sp_trace_setevent @TraceID, 216, 35, @on
+exec sp_trace_setevent @TraceID, 216, 36, @on
+exec sp_trace_setevent @TraceID, 216, 37, @on
+exec sp_trace_setevent @TraceID, 216, 38, @on
+exec sp_trace_setevent @TraceID, 216, 39, @on
+exec sp_trace_setevent @TraceID, 216, 41, @on
+exec sp_trace_setevent @TraceID, 216, 42, @on
+exec sp_trace_setevent @TraceID, 216, 43, @on
+exec sp_trace_setevent @TraceID, 216, 64, @on
+
+exec sp_trace_setevent @TraceID, 217, 1, @on
+exec sp_trace_setevent @TraceID, 217, 3, @on
+exec sp_trace_setevent @TraceID, 217, 6, @on
+exec sp_trace_setevent @TraceID, 217, 7, @on
+exec sp_trace_setevent @TraceID, 217, 8, @on
+exec sp_trace_setevent @TraceID, 217, 9, @on
+exec sp_trace_setevent @TraceID, 217, 10, @on
+exec sp_trace_setevent @TraceID, 217, 11, @on
+exec sp_trace_setevent @TraceID, 217, 12, @on
+exec sp_trace_setevent @TraceID, 217, 13, @on
+exec sp_trace_setevent @TraceID, 217, 14, @on
+exec sp_trace_setevent @TraceID, 217, 15, @on
+exec sp_trace_setevent @TraceID, 217, 16, @on
+exec sp_trace_setevent @TraceID, 217, 17, @on
+exec sp_trace_setevent @TraceID, 217, 18, @on
+exec sp_trace_setevent @TraceID, 217, 21, @on
+exec sp_trace_setevent @TraceID, 217, 23, @on
+exec sp_trace_setevent @TraceID, 217, 26, @on
+exec sp_trace_setevent @TraceID, 217, 27, @on
+exec sp_trace_setevent @TraceID, 217, 34, @on
+exec sp_trace_setevent @TraceID, 217, 35, @on
+exec sp_trace_setevent @TraceID, 217, 36, @on
+exec sp_trace_setevent @TraceID, 217, 37, @on
+exec sp_trace_setevent @TraceID, 217, 38, @on
+exec sp_trace_setevent @TraceID, 217, 39, @on
+exec sp_trace_setevent @TraceID, 217, 41, @on
+exec sp_trace_setevent @TraceID, 217, 42, @on
+exec sp_trace_setevent @TraceID, 217, 43, @on
+exec sp_trace_setevent @TraceID, 217, 64, @on
+
+exec sp_trace_setevent @TraceID, 218, 1, @on
+exec sp_trace_setevent @TraceID, 218, 3, @on
+exec sp_trace_setevent @TraceID, 218, 6, @on
+exec sp_trace_setevent @TraceID, 218, 7, @on
+exec sp_trace_setevent @TraceID, 218, 8, @on
+exec sp_trace_setevent @TraceID, 218, 9, @on
+exec sp_trace_setevent @TraceID, 218, 10, @on
+exec sp_trace_setevent @TraceID, 218, 11, @on
+exec sp_trace_setevent @TraceID, 218, 12, @on
+exec sp_trace_setevent @TraceID, 218, 13, @on
+exec sp_trace_setevent @TraceID, 218, 14, @on
+exec sp_trace_setevent @TraceID, 218, 15, @on
+exec sp_trace_setevent @TraceID, 218, 16, @on
+exec sp_trace_setevent @TraceID, 218, 17, @on
+exec sp_trace_setevent @TraceID, 218, 18, @on
+exec sp_trace_setevent @TraceID, 218, 21, @on
+exec sp_trace_setevent @TraceID, 218, 23, @on
+exec sp_trace_setevent @TraceID, 218, 26, @on
+exec sp_trace_setevent @TraceID, 218, 27, @on
+exec sp_trace_setevent @TraceID, 218, 34, @on
+exec sp_trace_setevent @TraceID, 218, 35, @on
+exec sp_trace_setevent @TraceID, 218, 36, @on
+exec sp_trace_setevent @TraceID, 218, 37, @on
+exec sp_trace_setevent @TraceID, 218, 38, @on
+exec sp_trace_setevent @TraceID, 218, 39, @on
+exec sp_trace_setevent @TraceID, 218, 41, @on
+exec sp_trace_setevent @TraceID, 218, 42, @on
+exec sp_trace_setevent @TraceID, 218, 43, @on
+exec sp_trace_setevent @TraceID, 218, 64, @on
+
+exec sp_trace_setevent @TraceID, 235, 1, @on
+exec sp_trace_setevent @TraceID, 235, 3, @on
+exec sp_trace_setevent @TraceID, 235, 6, @on
+exec sp_trace_setevent @TraceID, 235, 7, @on
+exec sp_trace_setevent @TraceID, 235, 8, @on
+exec sp_trace_setevent @TraceID, 235, 9, @on
+exec sp_trace_setevent @TraceID, 235, 10, @on
+exec sp_trace_setevent @TraceID, 235, 11, @on
+exec sp_trace_setevent @TraceID, 235, 12, @on
+exec sp_trace_setevent @TraceID, 235, 13, @on
+exec sp_trace_setevent @TraceID, 235, 14, @on
+exec sp_trace_setevent @TraceID, 235, 15, @on
+exec sp_trace_setevent @TraceID, 235, 16, @on
+exec sp_trace_setevent @TraceID, 235, 17, @on
+exec sp_trace_setevent @TraceID, 235, 18, @on
+exec sp_trace_setevent @TraceID, 235, 21, @on
+exec sp_trace_setevent @TraceID, 235, 23, @on
+exec sp_trace_setevent @TraceID, 235, 26, @on
+exec sp_trace_setevent @TraceID, 235, 27, @on
+exec sp_trace_setevent @TraceID, 235, 34, @on
+exec sp_trace_setevent @TraceID, 235, 35, @on
+exec sp_trace_setevent @TraceID, 235, 36, @on
+exec sp_trace_setevent @TraceID, 235, 37, @on
+exec sp_trace_setevent @TraceID, 235, 38, @on
+exec sp_trace_setevent @TraceID, 235, 39, @on
+exec sp_trace_setevent @TraceID, 235, 41, @on
+exec sp_trace_setevent @TraceID, 235, 42, @on
+exec sp_trace_setevent @TraceID, 235, 43, @on
+exec sp_trace_setevent @TraceID, 235, 64, @on
+
+
+-- Set the Filters
+declare @intfilter int
+declare @bigintfilter bigint
+
+exec sp_trace_setfilter @TraceID, 10, 0, 7, N'SQL Profiler'
+
+
+-- Set the trace status to start
+exec sp_trace_setstatus @TraceID, 1
+
+-- display trace id for future references
+select TraceID=@TraceID
+goto finish
+
+error:
+select ErrorCode=@rc
+return @rc
+
+finish:
+return @TraceID    
+
+
